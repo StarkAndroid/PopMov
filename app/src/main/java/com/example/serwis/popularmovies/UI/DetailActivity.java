@@ -63,6 +63,8 @@ public class DetailActivity extends AppCompatActivity{
     NestedScrollView nestedScrollView;
 
     String PositionArray = "POSITION_ARRAY";
+    String TrailersKey = "TRAILERS";
+    String ReviewsKey = "REVIEWS";
 
 
     @Override
@@ -99,8 +101,9 @@ public class DetailActivity extends AppCompatActivity{
         });
 
         recyclerView.setAdapter(trailerAdapter);
-        new GainReviewsAndTrailers().execute(CurrentMovie.getmID());
-        recyclerView.setLayoutManager(new LinearLayoutManager(this, LinearLayoutManager.VERTICAL,
+
+        recyclerView.setLayoutManager(new LinearLayoutManager(this,
+                LinearLayoutManager.VERTICAL,
                 false));
         recyclerView.setNestedScrollingEnabled(false);
 
@@ -110,7 +113,26 @@ public class DetailActivity extends AppCompatActivity{
         StringAdapter =
                 new ArrayAdapter<>(this, android.R.layout.simple_list_item_1, Reviews);
         listView.setAdapter(StringAdapter);
-        new GainReviews().execute(CurrentMovie.getmID());
+
+
+        if(savedInstanceState!=null){
+            trailers = savedInstanceState.getParcelableArrayList(TrailersKey);
+            trailerAdapter.swampTrailers(trailers);
+            Reviews = savedInstanceState.getStringArrayList(ReviewsKey);
+            StringAdapter.addAll(Reviews);
+            StringAdapter.notifyDataSetChanged();
+            final int[] position = savedInstanceState.getIntArray(PositionArray);
+            if(position != null)
+                nestedScrollView.post(new Runnable() {
+                    public void run() {
+                        nestedScrollView.scrollTo(position[0], position[1]);
+                    }
+                });
+
+
+        } else {new GainReviewsAndTrailers().execute(CurrentMovie.getmID());
+            new GainReviews().execute(CurrentMovie.getmID());
+        }
     }
 
     public void insert (View view){
@@ -173,7 +195,8 @@ public class DetailActivity extends AppCompatActivity{
         @Override
         protected void onPostExecute(ArrayList<String> ReviewsList) {
             if (ReviewsList!=null){
-            StringAdapter.addAll(ReviewsList);
+                Reviews = ReviewsList;
+            StringAdapter.addAll(Reviews);
             StringAdapter.notifyDataSetChanged();}
         }
     }
@@ -183,17 +206,7 @@ public class DetailActivity extends AppCompatActivity{
         super.onSaveInstanceState(outState);
         outState.putIntArray(PositionArray, new int[]{nestedScrollView.getScrollX(),
                 nestedScrollView.getScrollY()});
-    }
-
-    @Override
-    protected void onRestoreInstanceState(Bundle savedInstanceState) {
-        super.onRestoreInstanceState(savedInstanceState);
-        final int[] position = savedInstanceState.getIntArray(PositionArray);
-        if(position != null)
-            nestedScrollView.post(new Runnable() {
-                public void run() {
-                    nestedScrollView.scrollTo(position[0], position[1]);
-                }
-            });
+        outState.putParcelableArrayList(TrailersKey, trailers);
+        outState.putStringArrayList(ReviewsKey, Reviews);
     }
 }
