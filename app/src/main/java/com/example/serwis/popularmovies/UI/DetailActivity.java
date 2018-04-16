@@ -95,6 +95,7 @@ public class DetailActivity extends AppCompatActivity{
         recyclerView.setNestedScrollingEnabled(false);
 
         ListView listView = findViewById(R.id.reviews_LV);
+
         Reviews = new ArrayList<>();
         StringAdapter =
                 new ArrayAdapter<>(this, android.R.layout.simple_list_item_1, Reviews);
@@ -160,5 +161,6 @@ public class DetailActivity extends AppCompatActivity{
             StringAdapter.notifyDataSetChanged();
         }
     }
+
 
 }
