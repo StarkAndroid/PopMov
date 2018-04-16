@@ -1,11 +1,14 @@
 package com.example.serwis.popularmovies.UI;
 
+import android.content.Context;
 import android.content.Intent;
 import android.os.AsyncTask;
+import android.os.Parcelable;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.support.v7.widget.GridLayoutManager;
 import android.support.v7.widget.RecyclerView;
+import android.util.DisplayMetrics;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
@@ -26,6 +29,10 @@ public class MainActivity extends AppCompatActivity {
     private static boolean sort_bypop=true;
     ArrayList<Movie> movies;
     MoviesAdapter adapter;
+    String KEY_RV_POSITION = "RVposition";
+    GridLayoutManager gridLayoutManager;
+    RecyclerView recyclerView;
+    Parcelable savedInstanceStateLayout;
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
@@ -58,11 +65,18 @@ public class MainActivity extends AppCompatActivity {
     }
 
     @Override
+    protected void onSaveInstanceState(Bundle outState) {
+        super.onSaveInstanceState(outState);
+        outState.putParcelable(KEY_RV_POSITION, gridLayoutManager.onSaveInstanceState());
+    }
+
+
+    @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        RecyclerView recyclerView =  findViewById(R.id.RecyclerView);
+        recyclerView =  findViewById(R.id.RecyclerView);
 
         new FetchMovies().execute(sort_bypop);
 
@@ -80,7 +94,11 @@ public class MainActivity extends AppCompatActivity {
         });
 
         recyclerView.setAdapter(adapter);
-        recyclerView.setLayoutManager(new GridLayoutManager(this, 2));
+        int NumberOfColumns = calculateNoOfColumns(this);
+        if (savedInstanceState!=null){
+        savedInstanceStateLayout = savedInstanceState.getParcelable(KEY_RV_POSITION);}
+        gridLayoutManager = new GridLayoutManager(this, NumberOfColumns);
+        recyclerView.setLayoutManager(gridLayoutManager);
 
     }
 
@@ -106,6 +124,18 @@ public class MainActivity extends AppCompatActivity {
         protected void onPostExecute(ArrayList<Movie> downloaded_movies) {
             movies = downloaded_movies;
             adapter.newMovies(downloaded_movies);
+            if (savedInstanceStateLayout!=null){
+            gridLayoutManager.onRestoreInstanceState(savedInstanceStateLayout);}
+
         }
+    }
+    public static int calculateNoOfColumns(Context context) {
+        DisplayMetrics displayMetrics = context.getResources().getDisplayMetrics();
+        float dpWidth = displayMetrics.widthPixels / displayMetrics.density;
+        int scalingFactor = 180;
+        int noOfColumns = (int) (dpWidth / scalingFactor);
+        if(noOfColumns < 2)
+            noOfColumns = 2;
+        return noOfColumns;
     }
 }

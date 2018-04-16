@@ -3,10 +3,13 @@ package com.example.serwis.popularmovies.UI;
 import android.content.ContentValues;
 import android.content.Context;
 import android.content.Intent;
+import android.database.Cursor;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.os.PersistableBundle;
 import android.support.annotation.Nullable;
+import android.support.v4.widget.NestedScrollView;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
@@ -57,10 +60,17 @@ public class DetailActivity extends AppCompatActivity{
     Movie CurrentMovie;
     ArrayList<Trailer> trailers;
     ArrayList<String> Reviews;
+    NestedScrollView nestedScrollView;
+
+    String PositionArray = "POSITION_ARRAY";
+
+
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.detail_activity);
+
+        nestedScrollView = findViewById(R.id.NSW);
 
         Context context = getApplicationContext();
         Intent newIntent = getIntent();
@@ -105,15 +115,20 @@ public class DetailActivity extends AppCompatActivity{
 
     public void insert (View view){
 
+        String[] a = new String[1];
+        a[0] = CurrentMovie.getmID();
+        Cursor cursor = getContentResolver().query(MovieContract.MovieEntry.CONTENT_URI.buildUpon().appendPath("1").build(), null, null, a, null, null);
 
+        if (cursor.getCount()==0){
         ContentValues contentValues = new ContentValues();
         contentValues.put(MovieContract.MovieEntry.MOVIE_ID, CurrentMovie.getmID());
         contentValues.put(MovieContract.MovieEntry.MOVIE_TITLE, CurrentMovie.getmTitle());
 
         Uri uri = getContentResolver().insert(MovieContract.MovieEntry.CONTENT_URI, contentValues);
 
-        Toast.makeText(getBaseContext(), uri.toString(), Toast.LENGTH_LONG).show();
-        //finish();
+        }else if (cursor.getCount()==1){
+            Toast.makeText(getBaseContext(), R.string.maniac, Toast.LENGTH_LONG).show();
+        }
     }
 
     public class GainReviewsAndTrailers extends AsyncTask<String, Void, ArrayList<Trailer>>{
@@ -157,10 +172,28 @@ public class DetailActivity extends AppCompatActivity{
 
         @Override
         protected void onPostExecute(ArrayList<String> ReviewsList) {
+            if (ReviewsList!=null){
             StringAdapter.addAll(ReviewsList);
-            StringAdapter.notifyDataSetChanged();
+            StringAdapter.notifyDataSetChanged();}
         }
     }
 
+    @Override
+    protected void onSaveInstanceState(Bundle outState) {
+        super.onSaveInstanceState(outState);
+        outState.putIntArray(PositionArray, new int[]{nestedScrollView.getScrollX(),
+                nestedScrollView.getScrollY()});
+    }
 
+    @Override
+    protected void onRestoreInstanceState(Bundle savedInstanceState) {
+        super.onRestoreInstanceState(savedInstanceState);
+        final int[] position = savedInstanceState.getIntArray(PositionArray);
+        if(position != null)
+            nestedScrollView.post(new Runnable() {
+                public void run() {
+                    nestedScrollView.scrollTo(position[0], position[1]);
+                }
+            });
+    }
 }
